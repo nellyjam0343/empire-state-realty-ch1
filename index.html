@@ -62,13 +62,25 @@ function App() {
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (s) { setCash(s.cash||500); setRep(s.rep||0); setBestStreak(s.bestStreak||0); setChapterData(s.chapterData||{}); }
+      if (s) {
+        setCash(s.cash||500); setRep(s.rep||0); setBestStreak(s.bestStreak||0); setChapterData(s.chapterData||{});
+        setStreak(s.streak||0);
+        if (s.session) {
+          setCurrentCh(s.session.ch||1); setSceneIdx(s.session.sceneIdx||0);
+          setPhase(s.session.phase||'narrative'); setNarIdx(s.session.narIdx||0);
+          setCardIdx(s.session.cardIdx||0); setPick(s.session.pick!==undefined?s.session.pick:null);
+          setScreen(s.session.screen||'title');
+        }
+      }
     } catch(e) {}
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({cash,rep,bestStreak,chapterData})); } catch(e) {}
-  }, [cash, rep, bestStreak, chapterData]);
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+      cash,rep,bestStreak,chapterData,streak,
+      session:{screen,ch:currentCh,sceneIdx,phase,narIdx,cardIdx,pick}
+    })); } catch(e) {}
+  }, [cash, rep, bestStreak, chapterData, streak, screen, currentCh, sceneIdx, phase, narIdx, cardIdx, pick]);
 
   const flash = (msg, type='gold') => {
     clearTimeout(tt.current);
