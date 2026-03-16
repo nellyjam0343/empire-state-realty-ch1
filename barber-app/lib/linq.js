@@ -7,30 +7,36 @@
 // CONFIG — Replace with your actual values
 // ============================================
 const LINQ_API_BASE_URL = 'https://api.linqapp.com/api/partner/v3';
-const LINQ_API_TOKEN = 'YOUR_LINQ_API_TOKEN'; // Bearer token from Linq dashboard
+// IMPORTANT: Do NOT put your real API token here in client-side code.
+// Messages are sent via Supabase Edge Functions which hold the token securely.
+// This placeholder is only used if you're testing locally in sandbox mode.
+const LINQ_API_TOKEN = null; // Set in Supabase secrets, not here
 const LINQ_BOT_NUMBER = 'YOUR_LINQ_PHONE_NUMBER'; // e.g., '+12055551234'
 
 // ============================================
 // CORE API CLIENT
 // ============================================
 const linq = {
-  // Internal: make authenticated API call
-  _fetch: async (path, method = 'GET', body = null) => {
-    const options = {
-      method,
+  // Internal: route all API calls through Supabase Edge Function (keeps token server-side)
+  _fetch: async (action, payload = {}) => {
+    // All Linq calls go through our send-message Edge Function
+    // which holds the LINQ_API_TOKEN as a Supabase secret
+    const supabaseUrl = window.supabaseClient?.supabaseUrl || SUPABASE_URL;
+    const supabaseKey = window.supabaseClient?.supabaseKey || SUPABASE_ANON_KEY;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-message`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LINQ_API_TOKEN}`
-      }
-    };
-    if (body) options.body = JSON.stringify(body);
-
-    // In production, proxy through Supabase Edge Function to keep token server-side
-    const response = await fetch(`${LINQ_API_BASE_URL}${path}`, options);
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey
+      },
+      body: JSON.stringify({ action, ...payload })
+    });
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`Linq API error (${response.status}): ${text.slice(0, 200)}`);
+      throw new Error(`Send failed (${response.status}): ${text.slice(0, 200)}`);
     }
 
     const contentType = response.headers.get('content-type');
@@ -45,74 +51,33 @@ const linq = {
   // Endpoint: POST /v3/chats/{chatId}/messages
   // ============================================
 
-  // Send a text message to a chat (phone number = chatId for 1:1)
+  // Send a text message (routed through Supabase Edge Function)
   sendMessage: async (chatId, text, options = {}) => {
-    const body = {
-      parts: [{ type: 'text', text }]
-    };
-
-    // Optional: reply to a specific message
-    if (options.replyTo) {
-      body.replyTo = options.replyTo;
-    }
-
-    // Optional: screen effect (confetti, fireworks, balloons, heart, lasers, spotlight, echo)
-    if (options.effect) {
-      body.effect = options.effect;
-    }
-
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}/messages`, 'POST', body);
+    return linq._fetch('send', { chatId, text, ...options });
   },
 
   // Send a message with media attachment
   sendMediaMessage: async (chatId, text, mediaUrl, mimeType) => {
-    const body = {
-      parts: [
-        { type: 'text', text },
-        { type: 'attachment', url: mediaUrl, mimeType }
-      ]
-    };
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}/messages`, 'POST', body);
+    return linq._fetch('send', { chatId, text, mediaUrl, mimeType });
   },
 
-  // ============================================
-  // TYPING INDICATORS
-  // ============================================
-
+  // Typing indicators
   startTyping: async (chatId) => {
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}/typing`, 'POST');
+    return linq._fetch('typing', { chatId, active: true });
   },
 
   stopTyping: async (chatId) => {
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}/typing`, 'DELETE');
+    return linq._fetch('typing', { chatId, active: false });
   },
 
-  // ============================================
-  // READ RECEIPTS
-  // ============================================
-
+  // Read receipts
   markAsRead: async (chatId) => {
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}/read`, 'POST');
+    return linq._fetch('read', { chatId });
   },
 
-  // ============================================
-  // REACTIONS (tapbacks)
-  // Standard: love, like, dislike, laugh, emphasize, question
-  // Also supports custom emoji reactions
-  // ============================================
-
+  // Reactions (love, like, dislike, laugh, emphasize, question, or custom emoji)
   sendReaction: async (messageId, reaction) => {
-    return linq._fetch(`/messages/${encodeURIComponent(messageId)}/reactions`, 'POST', {
-      reaction
-    });
-  },
-
-  // ============================================
-  // CHAT INFO
-  // ============================================
-
-  getChat: async (chatId) => {
-    return linq._fetch(`/chats/${encodeURIComponent(chatId)}`, 'GET');
+    return linq._fetch('react', { messageId, reaction });
   },
 
   // ============================================
