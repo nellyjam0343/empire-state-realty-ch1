@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="ClipBook - Barber scheduling and client messaging">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
+  <title>ClipBook</title>
+
+  <!-- React 18 via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Supabase JS client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-card: #16213e;
+      --bg-input: #1e2a4a;
+      --accent: #e94560;
+      --accent-hover: #ff6b81;
+      --accent-subtle: rgba(233,69,96,0.15);
+      --text-primary: #eee;
+      --text-secondary: #8892b0;
+      --text-muted: #5a6380;
+      --border: #2a2a4a;
+      --success: #00d68f;
+      --warning: #ffaa00;
+      --imessage-blue: #0b93f6;
+      --rcs-green: #34c759;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root { min-height: 100vh; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .slide-up { animation: slideUp 0.4s ease-out; }
+
+    /* Utility classes */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius-sm); border: none;
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { color: var(--text-primary); background: var(--bg-input); }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    .btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+
+    .input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-family: inherit; font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .input:focus { outline: none; border-color: var(--accent); }
+    .input::placeholder { color: var(--text-muted); }
+
+    .label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    }
+    .badge-success { background: rgba(0,214,143,0.15); color: var(--success); }
+    .badge-warning { background: rgba(255,170,0,0.15); color: var(--warning); }
+    .badge-accent { background: var(--accent-subtle); color: var(--accent); }
+    .badge-blue { background: rgba(11,147,246,0.15); color: var(--imessage-blue); }
+
+    /* Layout */
+    .app-shell { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border);
+      padding: 24px 16px; display: flex; flex-direction: column; position: fixed;
+      top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .main-content { flex: 1; margin-left: 240px; padding: 32px; min-height: 100vh; }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-secondary); border-top: 1px solid var(--border);
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 100;
+    }
+    .mobile-nav-inner { display: flex; justify-content: space-around; }
+    .mobile-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 8px 12px; border-radius: var(--radius-sm); background: none;
+      border: none; color: var(--text-muted); font-size: 10px; font-family: inherit;
+      cursor: pointer; transition: color 0.2s;
+    }
+    .mobile-nav-item.active { color: var(--accent); }
+    .mobile-nav-item svg { width: 22px; height: 22px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px 16px 100px; }
+      .mobile-nav { display: block; }
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: var(--radius-sm);
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-primary); font-size: 14px;
+      animation: slideUp 0.3s ease-out; box-shadow: var(--shadow);
+    }
+    .toast-success { border-color: var(--success); }
+    .toast-error { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Lib scripts -->
+  <script type="text/babel" src="lib/supabase.js"></script>
+  <script type="text/babel" src="lib/linq.js"></script>
+  <script type="text/babel" src="lib/utils.js"></script>
+
+  <!-- Components -->
+  <script type="text/babel" src="components/Auth.jsx"></script>
+  <script type="text/babel" src="components/Dashboard.jsx"></script>
+  <script type="text/babel" src="components/Calendar.jsx"></script>
+  <script type="text/babel" src="components/ClientList.jsx"></script>
+  <script type="text/babel" src="components/Messages.jsx"></script>
+  <script type="text/babel" src="components/Settings.jsx"></script>
+  <script type="text/babel" src="components/BookingPage.jsx"></script>
+  <script type="text/babel" src="components/ShopManager.jsx"></script>
+
+  <!-- Main App -->
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
