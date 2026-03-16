@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const LINQ_API_KEY = Deno.env.get('LINQ_API_KEY')
+    const LINQ_API_TOKEN = Deno.env.get('LINQ_API_TOKEN')
     const now = new Date()
     let sentCount = 0
 
@@ -33,11 +33,11 @@ Deno.serve(async (req) => {
       const shopName = (appt as any).shops?.name || 'the shop'
       const linqNumber = (appt as any).shops?.linq_number
 
-      if (client?.phone && linqNumber && LINQ_API_KEY) {
+      if (client?.phone && linqNumber && LINQ_API_TOKEN) {
         const startTime = new Date(appt.start_time)
         const timeStr = startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
-        await sendMessage(LINQ_API_KEY, linqNumber, client.phone,
+        await sendMessage(LINQ_API_TOKEN, linqNumber, client.phone,
           `⏰ Reminder: You have an appointment tomorrow at ${timeStr}\n\n` +
           `${barberName} at ${shopName}\n\n` +
           `Reply CONFIRM to confirm or CANCEL to cancel.`
@@ -66,8 +66,8 @@ Deno.serve(async (req) => {
       const shopName = (appt as any).shops?.name || 'the shop'
       const linqNumber = (appt as any).shops?.linq_number
 
-      if (client?.phone && linqNumber && LINQ_API_KEY) {
-        await sendMessage(LINQ_API_KEY, linqNumber, client.phone,
+      if (client?.phone && linqNumber && LINQ_API_TOKEN) {
+        await sendMessage(LINQ_API_TOKEN, linqNumber, client.phone,
           `⏰ Heads up! Your appointment is in about 1 hour.\n\n` +
           `${barberName} at ${shopName}\n\n` +
           `See you soon! 💈`
@@ -94,16 +94,36 @@ Deno.serve(async (req) => {
   }
 })
 
-async function sendMessage(apiKey: string, from: string, to: string, body: string) {
+// Send message using Linq Blue v3 API
+// chatId = client phone number for 1:1 chats
+async function sendMessage(apiToken: string, _from: string, chatId: string, text: string) {
+  const LINQ_API_BASE = 'https://api.linqapp.com/api/partner/v3'
+
   try {
-    const response = await fetch('https://api.linqapp.com/v1/messages', {
+    // Start typing indicator
+    await fetch(`${LINQ_API_BASE}/chats/${encodeURIComponent(chatId)}/typing`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiToken}` }
+    })
+
+    // Send message
+    const response = await fetch(`${LINQ_API_BASE}/chats/${encodeURIComponent(chatId)}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiToken}`
       },
-      body: JSON.stringify({ from, to, body })
+      body: JSON.stringify({
+        parts: [{ type: 'text', text }]
+      })
     })
+
+    // Stop typing
+    await fetch(`${LINQ_API_BASE}/chats/${encodeURIComponent(chatId)}/typing`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${apiToken}` }
+    })
+
     if (!response.ok) {
       console.error('Linq send failed:', await response.text())
     }
