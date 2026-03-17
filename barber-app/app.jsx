@@ -6,7 +6,7 @@ function App() {
   const [barber, setBarber] = useState(null);
   const [shop, setShop] = useState(null);
   const [barbers, setBarbers] = useState([]);
-  const [activePage, setActivePage] = useState('calendar');
+  const [activePage, setActivePage] = useState('home');
   const [loading, setLoading] = useState(true);
   const [setupMode, setSetupMode] = useState(false);
 
@@ -130,6 +130,8 @@ function App() {
   // Main app
   const renderPage = () => {
     switch (activePage) {
+      case 'home':
+        return <AnalyticsDashboard shop={shop} barber={barber} barbers={barbers} />;
       case 'calendar':
         return <CalendarView shop={shop} barber={barber} barbers={barbers} />;
       case 'clients':
@@ -143,20 +145,24 @@ function App() {
       case 'settings':
         return <SettingsView shop={shop} barber={barber} onUpdate={refreshData} />;
       default:
-        return <CalendarView shop={shop} barber={barber} barbers={barbers} />;
+        return <AnalyticsDashboard shop={shop} barber={barber} barbers={barbers} />;
     }
   };
 
   return (
-    <DashboardLayout
-      barber={barber}
-      shop={shop}
-      activePage={activePage}
-      onNavigate={setActivePage}
-      onLogout={handleLogout}
-    >
-      {renderPage()}
-    </DashboardLayout>
+    <ToastProvider>
+      <DashboardLayout
+        barber={barber}
+        shop={shop}
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onLogout={handleLogout}
+      >
+        <ErrorBoundary>
+          {renderPage()}
+        </ErrorBoundary>
+      </DashboardLayout>
+    </ToastProvider>
   );
 }
 

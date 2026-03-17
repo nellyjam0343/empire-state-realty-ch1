@@ -1,5 +1,5 @@
 // ClipBook Service Worker - Offline support + caching
-const CACHE_NAME = 'clipbook-v1';
+const CACHE_NAME = 'clipbook-v2';
 const STATIC_ASSETS = [
   '/barber-app/',
   '/barber-app/index.html',
@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
   '/barber-app/lib/supabase.js',
   '/barber-app/lib/linq.js',
   '/barber-app/lib/utils.js',
+  '/barber-app/components/UI.jsx',
   '/barber-app/components/Auth.jsx',
   '/barber-app/components/Dashboard.jsx',
   '/barber-app/components/Calendar.jsx',
@@ -15,6 +16,7 @@ const STATIC_ASSETS = [
   '/barber-app/components/Settings.jsx',
   '/barber-app/components/BookingPage.jsx',
   '/barber-app/components/ShopManager.jsx',
+  '/barber-app/components/Analytics.jsx',
   '/barber-app/manifest.json'
 ];
 

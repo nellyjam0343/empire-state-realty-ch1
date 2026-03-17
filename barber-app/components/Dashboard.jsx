@@ -15,6 +15,7 @@ const Icons = {
 };
 
 const NAV_ITEMS = [
+  { id: 'home', label: 'Dashboard', icon: Icons.scissors },
   { id: 'calendar', label: 'Calendar', icon: Icons.calendar },
   { id: 'clients', label: 'Clients', icon: Icons.users },
   { id: 'messages', label: 'Messages', icon: Icons.message },

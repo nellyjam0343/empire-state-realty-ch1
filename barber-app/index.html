@@ -166,6 +166,36 @@
     }
     .toast-success { border-color: var(--success); }
     .toast-error { border-color: var(--accent); }
+    .toast-warning { border-color: var(--warning); }
+    .toast-info { border-color: var(--imessage-blue); }
+
+    /* Skeleton shimmer */
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-input) 25%, var(--bg-card) 50%, var(--bg-input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* Chart container */
+    .chart-bar {
+      height: 100%;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.5s ease-out, background 0.2s;
+      min-height: 2px;
+    }
+    .chart-bar:hover { opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -177,6 +207,7 @@
   <script type="text/babel" src="lib/utils.js"></script>
 
   <!-- Components -->
+  <script type="text/babel" src="components/UI.jsx"></script>
   <script type="text/babel" src="components/Auth.jsx"></script>
   <script type="text/babel" src="components/Dashboard.jsx"></script>
   <script type="text/babel" src="components/Calendar.jsx"></script>
@@ -185,6 +216,7 @@
   <script type="text/babel" src="components/Settings.jsx"></script>
   <script type="text/babel" src="components/BookingPage.jsx"></script>
   <script type="text/babel" src="components/ShopManager.jsx"></script>
+  <script type="text/babel" src="components/Analytics.jsx"></script>
 
   <!-- Main App -->
   <script type="text/babel" src="app.jsx"></script>
